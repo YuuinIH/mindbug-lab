@@ -30,7 +30,10 @@ function gameFor(matchId: string, input: unknown): GameDefinition<State, Command
       if (c.exhausted && (!has(c, 'tough') || !['field', 'discard'].includes(c.zone))) throw Error('Invalid exhaustion');
     }
     for (const actor of ['A', 'B'] satisfies Player[]) {
-      if (s.cards.filter(c => c.controller === actor && c.zone === 'hand').length < 5 &&
+      const handSize = s.cards.filter(c => c.controller === actor && c.zone === 'hand').length;
+      // The supported subset has no additional draw/card-gain abilities.
+      if (handSize > 5) throw Error('Hand exceeds subset limit');
+      if (handSize < 5 &&
         s.cards.some(c => c.controller === actor && c.zone === 'deck')) throw Error('Hand must refill before waiting');
     }
     const pending = s.cards.filter(c => c.zone === 'pending');

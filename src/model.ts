@@ -2,7 +2,8 @@ import { z } from 'zod';
 
 const player = z.enum(['A', 'B']);
 const id = z.string().min(1).max(100);
-const count = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
+// This subset has no life-gain effects; expand this bound when adding those rules.
+const life = z.number().int().min(0).max(3);
 export const definitionsSchema = z.array(z.strictObject({
   id,
   name: z.string().min(1),
@@ -36,7 +37,7 @@ const flow = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('frenzy'), attackerId: id }),
   z.strictObject({ kind: z.literal('finished'), winner: player, reason: z.enum(['life', 'no-actions']) }),
 ]);
-const playerState = z.strictObject({ life: count, mindbugs: z.number().int().min(0).max(2) });
+const playerState = z.strictObject({ life, mindbugs: z.number().int().min(0).max(2) });
 export const stateSchema = z.strictObject({
   matchId: id,
   active: player,

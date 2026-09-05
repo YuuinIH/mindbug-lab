@@ -179,3 +179,60 @@ test('content validation rejects missing and duplicate definitions and nonfinite
   assert.throws(() => createMatch('one', [...definitions, definitions[0]], decks));
   assert.throws(() => createMatch('one', [{ id: 'hunter', name: 'bad', power: Infinity, keywords: [] }], decks));
 });
+
+test('multiple generated full games restore every decision and eventually terminate', () => {
+  for (let run = 0; run < 12; run += 1) {
+    const pool = ['hunter', 'tough', 'plain', 'frenzy'];
+    const buildDeck = (offset: number) => Array.from({ length: 10 }, (_, i) => pool[(i + offset) % pool.length] ?? 'plain');
+    let match = createMatch('one', definitions, { A: buildDeck(run), B: buildDeck(run + 1) });
+    for (let step = 0; step < 200 && match.view().flow.kind !== 'finished'; step += 1) {
+      const state = match.view();
+      const active = state.active;
+      const opponent = active === 'A' ? 'B' : 'A';
+      let command: Command;
+      switch (state.flow.kind) {
+        case 'action': {
+          const inPlay = state.cards.find(c => c.zone === 'field' && c.controller === active);
+          const inHand = state.cards.find(c => c.zone === 'hand' && c.controller === active);
+          if (inPlay && (step % 3 !== 0 || !inHand)) command = { kind: 'attack', actor: active, creature: ref(inPlay.id) };
+          else {
+            assert.ok(inHand);
+            command = { kind: 'play', actor: active, card: { kind: 'card', matchId: 'one', id: inHand.id } };
+          }
+          break;
+        }
+        case 'mindbug': command = { kind: 'mindbug', actor: opponent, take: (step + run) % 2 === 0 }; break;
+        case 'block': {
+          const blocker = state.cards.find(c => c.zone === 'field' && c.controller === opponent);
+          command = { kind: 'block', actor: opponent, blocker: blocker && step % 3 !== 0 ? ref(blocker.id) : null };
+          break;
+        }
+        case 'frenzy': command = { kind: 'frenzy', actor: active, again: true }; break;
+        case 'finished': throw Error('Unexpected finished loop');
+      }
+      const restored = restoreMatch('one', definitions, JSON.parse(JSON.stringify(match.snapshot())));
+      const revision = match.snapshot().revision;
+      const expected = match.dispatch(command, revision);
+      const actual = restored.dispatch(command, revision);
+      assert.equal(expected.ok, true, JSON.stringify(expected));
+      assert.deepEqual(actual, expected);
+      assert.deepEqual(restored.snapshot(), match.snapshot());
+      assert.equal(restored.dispatch(command, revision).ok, false);
+      match = restored;
+    }
+    assert.equal(match.view().flow.kind, 'finished', `run ${run} must finish`);
+  }
+});
+
+
+test('the no-healing/no-extra-draw subset rejects excess life and oversized hands', () => {
+  const match = fieldMatch();
+  const excessLife = match.snapshot();
+  excessLife.state.players.A.life = 999;
+  assert.throws(() => restoreMatch('one', definitions, excessLife));
+  const excessHand = match.snapshot();
+  const card = excessHand.state.cards.find(c => c.zone === 'deck' && c.controller === 'A');
+  assert.ok(card);
+  card.zone = 'hand';
+  assert.throws(() => restoreMatch('one', definitions, excessHand));
+});
