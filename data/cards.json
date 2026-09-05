@@ -1,0 +1,6 @@
+[
+  { "id": "scout", "name": "实验侦察者", "power": 5, "keywords": ["hunter"] },
+  { "id": "guard", "name": "实验守卫", "power": 3, "keywords": ["tough"] },
+  { "id": "runner", "name": "实验突击者", "power": 6, "keywords": ["frenzy"] },
+  { "id": "soldier", "name": "实验战士", "power": 4, "keywords": [] }
+]
