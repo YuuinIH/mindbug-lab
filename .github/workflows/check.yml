@@ -12,12 +12,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: YuuinIH/turn-kernel
-          ref: 805c27436839ae7efb07e99767cf004cb84ce7a0
+          ref: 4979c0a19ae817a31a94eb38e59ff1d5189348fc
           path: turn-kernel
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
       - run: npm ci --ignore-scripts && npm run check
         working-directory: turn-kernel
-      - run: npm ci --ignore-scripts && npm run check && npm run demo
+      - run: npm ci --ignore-scripts && npm run check && npm run demo && npm run demo:pet
         working-directory: mindbug-lab
