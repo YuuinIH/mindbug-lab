@@ -63,6 +63,8 @@ Mindbug 按模型、校验、行动、结算、注册和宿主拆分文件。每
 
 ## 自定义内容入口
 
+校验能力由内核提供：统一从 `@yuuinih/turn-kernel` 导入 `z`，游戏包不再单独依赖 Zod。对象直接以 `defineObject(kind, version, schema)` 定义，字段类型由 schema 推导。
+
 Mindbug 的 JSON 卡牌资料在 `registration.ts` 校验并注册。精灵的对象、关系、派生值、操作和流程在 `pet-duel/game.ts` 组装版本化规则集。
 
 内容作者可以通过内核 `defineBehavior` 声明允许请求的操作，再用 `bindBehavior` 将 JSON/YAML 参数绑定到注册行为，构建时检查依赖并冻结。完整示例和安全边界见 [内核注册说明](https://github.com/YuuinIH/turn-kernel#自定义内容如何注册)。参数保留数据形式供分析；TS 行为实现变更必须提升版本，不在进行中的对局热替换。

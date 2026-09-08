@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@yuuinih/turn-kernel";
 import { createSession, restoreSession } from "@yuuinih/turn-kernel";
 import type { Card, Player, State } from "./model.js";
 import { gameFor } from "./game.js";

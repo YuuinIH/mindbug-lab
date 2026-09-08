@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@yuuinih/turn-kernel";
 import {
   createSession,
   restoreSession,

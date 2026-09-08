@@ -8,11 +8,15 @@ import {
   type Relation,
 } from "@yuuinih/turn-kernel";
 import { definitionsSchema, stateSchema, type State } from "./model.js";
-export const cardType = defineObject("card", "1", (value) =>
-  stateSchema.shape.cards.element.parse(value),
+export const cardType = defineObject(
+  "card",
+  "1",
+  stateSchema.shape.cards.element,
 );
-export const playerType = defineObject("player", "1", (value) =>
-  stateSchema.shape.players.shape.A.parse(value),
+export const playerType = defineObject(
+  "player",
+  "1",
+  stateSchema.shape.players.shape.A,
 );
 export const controlledBy = defineRelation({
   id: "controlled-by",

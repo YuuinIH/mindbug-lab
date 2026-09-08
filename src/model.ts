@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@yuuinih/turn-kernel";
 
 const player = z.enum(["A", "B"]);
 const id = z.string().min(1).max(100);

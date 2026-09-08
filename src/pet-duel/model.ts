@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@yuuinih/turn-kernel";
 import {
   activeModifiers,
   defineObject,
@@ -25,10 +25,8 @@ const markSchema = z.strictObject({
   bonus: z.number().int(),
   discount: z.number().int().min(0),
 });
-export const pet = defineObject("pet", "1", (value) => petSchema.parse(value));
-export const mark = defineObject("mark", "1", (value) =>
-  markSchema.parse(value),
-);
+export const pet = defineObject("pet", "1", petSchema);
+export const mark = defineObject("mark", "1", markSchema);
 export const attached = defineRelation({
   id: "attached",
   version: "1",
