@@ -394,3 +394,34 @@ test("the no-healing/no-extra-draw subset rejects excess life and oversized hand
   card.zone = "hand";
   assert.throws(() => restoreMatch("one", definitions, excessHand));
 });
+
+test("direct command operations preserve rejection reasons and leave no partial state", () => {
+  const match = createMatch("one", definitions, decks);
+  const saved = match.snapshot();
+  assert.deepEqual(
+    match.dispatch(
+      {
+        kind: "play",
+        actor: "B",
+        card: { kind: "card", matchId: "one", id: "B-0" },
+      },
+      0,
+    ),
+    {
+      ok: false,
+      code: "rejected",
+      reason: "Illegal action, actor, reference or target",
+    },
+  );
+  assert.deepEqual(match.snapshot(), saved);
+  assert.ok(
+    match.dispatch(
+      {
+        kind: "play",
+        actor: "A",
+        card: { kind: "card", matchId: "one", id: "A-0" },
+      },
+      0,
+    ).ok,
+  );
+});

@@ -99,7 +99,7 @@ export function petGame(
       ["object:pet"],
     ),
   );
-  const ruleset = builder.build("pet-duel", "2");
+  const ruleset = builder.build("pet-duel", "3");
   const flows = flowRuntime();
   const operations = operationRuntime();
   function parseState(input: unknown): PetSession {
@@ -112,13 +112,13 @@ export function petGame(
         .filter((f) => f.type === "combo")
         .map((f) => {
           if (
-            typeof f.locals !== "object" ||
-            f.locals === null ||
-            !("scope" in f.locals) ||
-            typeof f.locals.scope !== "string"
+            typeof f.data !== "object" ||
+            f.data === null ||
+            !("scope" in f.data) ||
+            typeof f.data.scope !== "string"
           )
             throw Error("Missing scope");
-          return f.locals.scope;
+          return f.data.scope;
         }) ?? [];
     if (battle.activeFlows.some((id) => !scopes.includes(id)))
       throw Error("Orphan flow modifier scope");
@@ -163,7 +163,7 @@ export function petGame(
             type: "combo",
             version: "1",
             step: "start",
-            locals: { source: command.source, target: command.target, scope },
+            data: { source: command.source, target: command.target, scope },
           },
           `${sessionId}:${scope}`,
         );

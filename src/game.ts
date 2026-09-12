@@ -1,10 +1,8 @@
 import {
   defineOperation,
-  FlowRuntime,
   OperationRuntime,
   registration,
   parse,
-  type FlowDefinition,
   type GameDefinition,
   type Operation,
   type OperationRequest,
@@ -49,55 +47,32 @@ export function gameFor(
     builder.add(token);
     return token;
   });
-  // Mindbug's state checkpoints retain its game-specific flow; each input executes a
-  // bounded operation through the same resumable flow protocol used by pet-duel.
-  const commandFlow: FlowDefinition<State> = {
-    id: "command",
-    version: "1",
-    steps: {
-      run: {
-        parseLocals: (value) => commandSchema.parse(value),
-        advance: (_state, frame) => {
-          const command = commandSchema.parse(frame.locals);
-          const request: OperationRequest = {
-            operation: command.kind,
-            version: "1",
-            input: command,
-          };
-          return { kind: "done", result: null, operations: [request] };
-        },
-      },
-    },
-  };
-  const flowToken = registration(
-    "flow",
-    "command",
-    "1",
-    commandFlow,
-    registrations.map((t) => `operation:${t.id}`),
-  );
-  builder.add(flowToken);
-  const assembled = builder.build("mindbug-lab", "2");
+  const assembled = builder.build("mindbug-lab", "3");
   const operations: Operation<State, Fact>[] = registrations.map((t) =>
     assembled.resolve(t),
   );
   const runtime = new OperationRuntime(parseState, operations);
-  const flow = new FlowRuntime([assembled.resolve(flowToken)], runtime);
   return {
     ruleset: assembled.id,
     parseState,
     parseCommand: (value) => commandSchema.parse(value),
     decide: (state, command) => {
-      const result = flow.run({
-        state,
-        flow: flow.start(
-          { type: "command", version: "1", step: "run", locals: command },
-          `${matchId}:command`,
-        ),
-      });
-      if (result.flow.status === "fault")
-        return { ok: false, reason: result.flow.error ?? "Rule failure" };
-      return { ok: true, state: result.state, facts: result.facts };
+      // A command is one operation; only game-specific waiting state is persisted.
+      const request: OperationRequest = {
+        operation: command.kind,
+        version: "1",
+        input: command,
+      };
+      try {
+        const result = runtime.execute(state, [request]);
+        return { ok: true, state: result.state, facts: result.facts };
+      } catch (error) {
+        // Preserve the rejection contract previously supplied by the flow adapter.
+        return {
+          ok: false,
+          reason: error instanceof Error ? error.message : "Rule failure",
+        };
+      }
     },
   };
 }
