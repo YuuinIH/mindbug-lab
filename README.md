@@ -84,3 +84,5 @@ Mindbug 的普通命令不再包装为单步 Flow，游戏自己的等待状态�
 精灵由生命、战斗组件及阵营字段组成；防御塔复用生命组件，印记没有生命能力。同一个治疗操作支持精灵和防御塔，并独立校验只修改目标生命组件。攻击力/费用从战斗组件派生，印记和连击通过类型化 modifier 工厂提供修正。附着关系以生命组件限制目标；恢复时统一检查 modifier 来源、目标和流程存活。组件定义集中在 `src/pet-duel/definitions.ts`，存档校验、数值、操作和流程仍分文件维护。
 
 组件组合目前固定；未引入动态组件或 ECS 调度。旧精灵快照不兼容。详见 [内核设计说明](https://github.com/YuuinIH/turn-kernel/blob/main/docs/components-values.md)。
+
+派生值现在必须在组件目标下声明，例如 `petCombat.numericValue<Battle>("attack", "1", (_q, _ref, combat) => combat.attack)`。计算前自动验证战斗组件，数值注册自动依赖其所属组件；modifier 使用组件内的派生值标识。v0.5 不兼容旧的裸 valueId。

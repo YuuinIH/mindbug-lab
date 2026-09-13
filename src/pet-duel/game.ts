@@ -95,7 +95,9 @@ export function petGame(
     );
   for (const value of valueDefinitions)
     builder.add(
-      registration("value", value.id, value.version, value, ["object:pet"]),
+      registration("value", value.id, value.version, value, [
+        `component:${value.component.id}`,
+      ]),
     );
   for (const operation of operationDefinitions)
     builder.add(
@@ -118,7 +120,7 @@ export function petGame(
       ["object:pet"],
     ),
   );
-  const ruleset = builder.build("pet-duel", "4");
+  const ruleset = builder.build("pet-duel", "5");
   const flows = flowRuntime();
   const operations = operationRuntime();
   function parseState(input: unknown): PetSession {

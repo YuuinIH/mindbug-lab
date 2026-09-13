@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: YuuinIH/turn-kernel
-          ref: 43ad90742e1b962909a27fc045684b1820192209
+          ref: 7a9df85d85812f1bb6a4efcc17317545b658fe50
           path: turn-kernel
       - uses: actions/setup-node@v4
         with:

@@ -29,7 +29,7 @@ export function parseBattle(input: unknown): Battle {
   const modifiers = validateModifiers(
     v.modifiers,
     valueDefinitions,
-    world.entities.map((e) => e.ref),
+    world,
     v.activeFlows,
   );
   return { world, modifiers, rng: v.rng, activeFlows: v.activeFlows };
