@@ -86,3 +86,9 @@ Mindbug 的普通命令不再包装为单步 Flow，游戏自己的等待状态�
 组件组合目前固定；未引入动态组件或 ECS 调度。旧精灵快照不兼容。详见 [内核设计说明](https://github.com/YuuinIH/turn-kernel/blob/main/docs/components-values.md)。
 
 派生值现在必须在组件目标下声明，例如 `petCombat.numericValue<Battle>("attack", "1", (_q, _ref, combat) => combat.attack)`。计算前自动验证战斗组件，数值注册自动依赖其所属组件；modifier 使用组件内的派生值标识。v0.5 不兼容旧的裸 valueId。
+
+## v0.6 结算中途等待
+
+新增 `strike` / `respond` 命令：攻击先固定攻击力和随机结果，等待防守方决定是否格挡，然后用本次结算的修正计算护盾消耗与生命损失。结算定义、流程、操作分别位于 `strike-definition.ts`、`strike-flow.ts`、`strike-operations.ts`；等待数据保存在 Frame，恢复后不重新取样。该示例未接入技能费用，是用于验证中间值的独立攻击路径。`test/strike.test.ts` 覆盖 JSON 恢复、状态变化、非法目标、工作进程接管和回执去重。
+
+运行 `npm run demo:strike` 查看取样、等待、JSON 归档恢复和格挡结算的完整过程。

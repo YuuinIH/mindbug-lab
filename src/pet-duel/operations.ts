@@ -1,3 +1,5 @@
+import { applyDamage, attackParticipants } from "./damage.js";
+import { strikeOperations } from "./strike-operations.js";
 import { isDeepStrictEqual } from "node:util";
 import { z } from "@yuuinih/turn-kernel";
 import {
@@ -16,7 +18,6 @@ import {
   parseBattle,
   pet,
   healable,
-  petHealth,
   petCombat,
   prune,
   relations,
@@ -227,45 +228,16 @@ export const damage = defineOperation<
   version: "1",
   parse: (v) => damageInput.parse(v),
   execute(state, input) {
-    const attacker = read(state).get(pet, input.source);
-    const target = read(state).get(pet, input.target);
-    if (
-      attacker.health.hp === 0 ||
-      target.health.hp === 0 ||
-      attacker.team === target.team
-    )
-      throw Error("Invalid attack participants");
+    attackParticipants(state, input.source, input.target);
     const random = nextRandom(state.rng, 3);
     state.rng = random.state;
-    const amount = effectiveAttack(state, input.source) + random.value;
-    const absorbed = Math.min(target.health.shield, amount);
-    const hpLost = Math.min(target.health.hp, amount - absorbed);
-    new WorldEditor(
-      state.world,
-      {
-        objects: [],
-        relations: [],
-        components: [{ kind: "pet", component: "health" }],
-      },
-      relations,
-    ).setComponent(petHealth, input.target, {
-      ...target.health,
-      shield: target.health.shield - absorbed,
-      hp: target.health.hp - hpLost,
-    });
-    return {
+    return applyDamage(
       state,
-      facts: [
-        {
-          kind: "damaged",
-          source: input.source,
-          target: input.target,
-          absorbed,
-          hpLost,
-          rolled: random.value,
-        },
-      ],
-    };
+      input.source,
+      input.target,
+      effectiveAttack(state, input.source) + random.value,
+      random.value,
+    );
   },
   authorize: authorize(["pet"]),
 });
@@ -282,6 +254,7 @@ export const end = defineOperation<Battle, string, Fact>({
   authorize: authorize([]),
 });
 export const operationDefinitions = [
+  ...strikeOperations,
   heal.operation,
   attach.operation,
   remove.operation,

@@ -1,3 +1,4 @@
+import { strikeFlow } from "./strike-flow.js";
 import { z } from "@yuuinih/turn-kernel";
 import {
   FlowRuntime,
@@ -124,5 +125,8 @@ export const combo: FlowDefinition<Battle> = {
   },
 };
 export function flowRuntime() {
-  return new FlowRuntime([combo, chooseReplacement], operationRuntime());
+  return new FlowRuntime(
+    [combo, chooseReplacement, strikeFlow],
+    operationRuntime(),
+  );
 }

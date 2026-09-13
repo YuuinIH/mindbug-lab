@@ -1,3 +1,5 @@
+import { strikeFlow, pendingStrikeFrame } from "./strike-flow.js";
+import { strikeSettlement } from "./strike-definition.js";
 import { z } from "@yuuinih/turn-kernel";
 import {
   createSession,
@@ -31,6 +33,13 @@ import { valueDefinitions } from "./values.js";
 const petRef = z.unknown().transform(pet.parseRef);
 const markRef = z.unknown().transform(mark.parseRef);
 const commandSchema = z.discriminatedUnion("kind", [
+  z.strictObject({ kind: z.literal("strike"), source: petRef, target: petRef }),
+  z.strictObject({
+    kind: z.literal("respond"),
+    promptId: z.string().min(1),
+    actor: z.string().min(1),
+    guard: z.boolean(),
+  }),
   z.strictObject({
     kind: z.literal("heal"),
     target: z.unknown().transform(healable.parseRef),
@@ -67,7 +76,22 @@ const envelope = z.strictObject({
 export function petGame(
   sessionId: string,
 ): GameDefinition<PetSession, PetCommand, Fact> {
-  const builder = new RulesetBuilder();
+  const builder = new RulesetBuilder()
+    .add(
+      registration(
+        "settlement",
+        strikeSettlement.id,
+        strikeSettlement.version,
+        strikeSettlement,
+      ),
+    )
+    .add(
+      registration("flow", strikeFlow.id, strikeFlow.version, strikeFlow, [
+        "settlement:strike-damage",
+        "operation:consume-strike-random",
+        "operation:apply-strike",
+      ]),
+    );
   for (const component of componentDefinitions)
     builder.add(
       registration("component", component.id, component.version, component),
@@ -120,7 +144,7 @@ export function petGame(
       ["object:pet"],
     ),
   );
-  const ruleset = builder.build("pet-duel", "5");
+  const ruleset = builder.build("pet-duel", "6");
   const flows = flowRuntime();
   const operations = operationRuntime();
   function parseState(input: unknown): PetSession {
@@ -128,6 +152,9 @@ export function petGame(
     const battle = parseBattle(v.battle);
     const flow = v.flow === null ? null : flows.parse(v.flow);
     if (battle.world.sessionId !== sessionId) throw Error("Foreign session");
+    for (const frame of flow?.stack ?? [])
+      if (frame.type === "strike" && frame.step === "respond")
+        pendingStrikeFrame(frame, sessionId);
     const scopes =
       flow?.stack
         .filter((f) => f.type === "combo")
@@ -150,7 +177,7 @@ export function petGame(
     parseState,
     parseCommand: (v) => commandSchema.parse(v),
     decide(state, command) {
-      if (command.kind === "choose") {
+      if (command.kind === "choose" || command.kind === "respond") {
         if (!state.flow || state.flow.status !== "waiting")
           return { ok: false, reason: "No pending choice" };
         const result = flows.run(
@@ -158,7 +185,7 @@ export function petGame(
           {
             promptId: command.promptId,
             actor: command.actor,
-            value: command.target,
+            value: command.kind === "choose" ? command.target : command.guard,
           },
         );
         if (result.flow.status === "fault")
@@ -177,14 +204,17 @@ export function petGame(
           ok: false,
           reason: "Flow must complete before another command",
         };
-      if (command.kind === "combo") {
-        const scope = `combo:${state.nextScope}`;
+      if (command.kind === "combo" || command.kind === "strike") {
+        const scope = `${command.kind}:${state.nextScope}`;
         const flow = flows.start(
           {
-            type: "combo",
+            type: command.kind,
             version: "1",
-            step: "start",
-            data: { source: command.source, target: command.target, scope },
+            step: command.kind === "combo" ? "start" : "sample",
+            data:
+              command.kind === "combo"
+                ? { source: command.source, target: command.target, scope }
+                : { source: command.source, target: command.target },
           },
           `${sessionId}:${scope}`,
         );
