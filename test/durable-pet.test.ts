@@ -65,7 +65,7 @@ test("a new worker resumes a waiting combo, deduplicates the prior hit and fence
   assert.equal(done.state.flow?.status, "finished");
   assert.equal(
     new WorldQuery(done.state.battle.world).get(pet, pet.ref("one", "reserve"))
-      .hp,
+      .health.hp,
     10,
   );
 });

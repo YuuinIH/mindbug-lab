@@ -22,7 +22,7 @@ export const chooseReplacement: FlowDefinition<Battle> = {
         const ref = pet.parseRef(input);
         const target = new WorldQuery(state.world).get(pet, ref);
         const data = switchSchema.parse(frame.data);
-        if (target.hp === 0 || target.team !== data.team)
+        if (target.health.hp === 0 || target.team !== data.team)
           throw Error("Ineligible replacement");
         return ref;
       },
@@ -75,12 +75,12 @@ export const combo: FlowDefinition<Battle> = {
         const data = dataSchema.parse(frame.data);
         const query = new WorldQuery(state.world);
         const target = query.get(pet, data.target);
-        if (target.hp > 0)
+        if (target.health.hp > 0)
           return { kind: "next", step: "second", data, operations: [] };
         if (
           !query.refs(pet).some((ref) => {
             const p = query.get(pet, ref);
-            return p.team === target.team && p.hp > 0;
+            return p.team === target.team && p.health.hp > 0;
           })
         ) {
           return {

@@ -6,7 +6,7 @@ import {
   restorePetDuel,
   type PetCommand,
 } from "../src/pet-duel/game.js";
-import { mark, pet } from "../src/pet-duel/model.js";
+import { mark, pet, tower, healable } from "../src/pet-duel/model.js";
 import { effectiveAttack, effectiveCost } from "../src/pet-duel/values.js";
 function send(session: ReturnType<typeof createPetDuel>, command: PetCommand) {
   const result = session.dispatch(command, session.snapshot().revision);
@@ -64,7 +64,7 @@ test("mark healing, stale refs and foreign targets fail without any write", () =
   }
   send(session, { kind: "heal", target: attacker, amount: 4 });
   assert.equal(
-    new WorldQuery(session.view().battle.world).get(pet, attacker).hp,
+    new WorldQuery(session.view().battle.world).get(pet, attacker).health.hp,
     24,
   );
   assert.equal(
@@ -81,18 +81,15 @@ test("two hits recalculate attributes after reactions, wait for replacement, res
   });
   assert.equal(session.view().flow?.status, "waiting");
   assert.equal(
-    new WorldQuery(session.view().battle.world).get(pet, attacker).energy,
+    new WorldQuery(session.view().battle.world).get(pet, attacker).combat
+      .energy,
     15,
   );
   assert.deepEqual(
     new WorldQuery(session.view().battle.world).get(pet, defender),
     {
-      hp: 0,
-      maxHp: 30,
-      attack: 5,
-      cost: 5,
-      energy: 10,
-      shield: 0,
+      health: { hp: 0, maxHp: 30, shield: 0 },
+      combat: { attack: 5, cost: 5, energy: 10 },
       team: "B",
     },
   );
@@ -134,7 +131,7 @@ test("two hits recalculate attributes after reactions, wait for replacement, res
     false,
   );
   assert.equal(
-    new WorldQuery(restored.view().battle.world).get(pet, reserve).hp,
+    new WorldQuery(restored.view().battle.world).get(pet, reserve).health.hp,
     10,
   );
   assert.equal(effectiveAttack(restored.view().battle, attacker), 19);
@@ -168,7 +165,33 @@ test("invalid combo fails without creating a fault flow or blocking later legal 
   }
   send(session, { kind: "heal", target: attacker, amount: 1 });
   assert.equal(
-    new WorldQuery(session.view().battle.world).get(pet, attacker).hp,
+    new WorldQuery(session.view().battle.world).get(pet, attacker).health.hp,
     21,
   );
+});
+
+test("one healing operation serves pet and tower components and preserves unrelated fields across restore", () => {
+  const session = createPetDuel("one");
+  const target = tower.ref("one", "tower");
+  send(session, { kind: "heal", target, amount: 100 });
+  const restored = restorePetDuel(
+    "one",
+    JSON.parse(JSON.stringify(session.snapshot())),
+  );
+  const query = new WorldQuery(restored.view().battle.world);
+  assert.equal(query.component(healable, target).hp, 40);
+  assert.deepEqual(query.get(pet, attacker).combat, {
+    attack: 10,
+    cost: 8,
+    energy: 20,
+  });
+  assert.equal(query.get(tower, target).team, "A");
+  const corrupt = restored.snapshot();
+  const entity = corrupt.state.battle.world.entities.find(
+    (e) => e.ref.id === "tower",
+  );
+  assert.ok(entity);
+  entity.value = { team: "A", health: { hp: 41, maxHp: 40, shield: 0 } };
+  assert.throws(() => restorePetDuel("one", corrupt));
+  assert.equal(query.component(healable, target).hp, 40);
 });

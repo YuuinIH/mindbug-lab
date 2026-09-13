@@ -78,3 +78,9 @@ Mindbug 的 JSON 卡牌资料在 `registration.ts` 校验并注册。精灵的�
 Mindbug 的普通命令不再包装为单步 Flow，游戏自己的等待状态仍随对局保存。精灵实验的连击与换人继续使用 Flow：每个 Frame 的 `data` 保存自己的局部状态，子流程结果显式返回；一次伤害仍然是 Operation，不是新的 Phase/Context 实体。
 
 回调收到隔离的状态数据；跨等待只保存恢复必需的信息，不保存执行服务或调用栈。两个示例提升规则集修订，旧规则集快照会被拒绝；需要恢复旧存档时保留旧版本或进行显式迁移。详见 [内核执行模型](https://github.com/YuuinIH/turn-kernel/blob/main/docs/flow-execution.md)。
+
+## v0.4 组件实验
+
+精灵由生命、战斗组件及阵营字段组成；防御塔复用生命组件，印记没有生命能力。同一个治疗操作支持精灵和防御塔，并独立校验只修改目标生命组件。攻击力/费用从战斗组件派生，印记和连击通过类型化 modifier 工厂提供修正。附着关系以生命组件限制目标；恢复时统一检查 modifier 来源、目标和流程存活。组件定义集中在 `src/pet-duel/definitions.ts`，存档校验、数值、操作和流程仍分文件维护。
+
+组件组合目前固定；未引入动态组件或 ECS 调度。旧精灵快照不兼容。详见 [内核设计说明](https://github.com/YuuinIH/turn-kernel/blob/main/docs/components-values.md)。

@@ -10,6 +10,9 @@ import {
 import { combo, chooseReplacement, flowRuntime } from "./flows.js";
 import {
   initialBattle,
+  healable,
+  componentDefinitions,
+  objectDefinitions,
   mark,
   parseBattle,
   pet,
@@ -30,7 +33,7 @@ const markRef = z.unknown().transform(mark.parseRef);
 const commandSchema = z.discriminatedUnion("kind", [
   z.strictObject({
     kind: z.literal("heal"),
-    target: petRef,
+    target: z.unknown().transform(healable.parseRef),
     amount: z.number().int().positive(),
   }),
   z.strictObject({
@@ -64,14 +67,30 @@ const envelope = z.strictObject({
 export function petGame(
   sessionId: string,
 ): GameDefinition<PetSession, PetCommand, Fact> {
-  const builder = new RulesetBuilder()
-    .add(registration("object", "pet", "1", pet))
-    .add(registration("object", "mark", "1", mark));
+  const builder = new RulesetBuilder();
+  for (const component of componentDefinitions)
+    builder.add(
+      registration("component", component.id, component.version, component),
+    );
+  for (const object of objectDefinitions)
+    builder.add(
+      registration(
+        "object",
+        object.kind,
+        object.version,
+        object,
+        object.components.map((c) => `component:${c.id}`),
+      ),
+    );
   for (const relation of relations)
     builder.add(
       registration("relation", relation.id, relation.version, relation, [
-        `object:${relation.from}`,
-        `object:${relation.to}`,
+        typeof relation.from === "string"
+          ? `object:${relation.from}`
+          : `component:${relation.from.component}`,
+        typeof relation.to === "string"
+          ? `object:${relation.to}`
+          : `component:${relation.to.component}`,
       ]),
     );
   for (const value of valueDefinitions)
@@ -99,7 +118,7 @@ export function petGame(
       ["object:pet"],
     ),
   );
-  const ruleset = builder.build("pet-duel", "3");
+  const ruleset = builder.build("pet-duel", "4");
   const flows = flowRuntime();
   const operations = operationRuntime();
   function parseState(input: unknown): PetSession {

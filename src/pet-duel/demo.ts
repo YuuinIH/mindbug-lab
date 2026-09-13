@@ -75,7 +75,10 @@ const result = await second.dispatch(
 assert.ok(result.ok);
 const finished = (await second.snapshot()).state;
 assert.equal(finished.flow?.status, "finished");
-assert.equal(new WorldQuery(finished.battle.world).get(pet, reserve).hp, 10);
+assert.equal(
+  new WorldQuery(finished.battle.world).get(pet, reserve).health.hp,
+  10,
+);
 assert.equal(finished.battle.activeFlows.length, 0);
 console.log(
   "第二击完成：替补生命 10，流程修正已清理，保留攻击",
