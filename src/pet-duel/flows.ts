@@ -1,3 +1,4 @@
+import { hitFlow } from "./hit-flow.js";
 import { strikeFlow } from "./strike-flow.js";
 import { z } from "@yuuinih/turn-kernel";
 import {
@@ -6,7 +7,7 @@ import {
   type FlowDefinition,
 } from "@yuuinih/turn-kernel";
 import { pet, type Battle } from "./model.js";
-import { begin, damage, end, operationRuntime } from "./operations.js";
+import { begin, end, operationRuntime } from "./operations.js";
 const dataSchema = z.strictObject({
   source: z.unknown().transform(pet.parseRef),
   target: z.unknown().transform(pet.parseRef),
@@ -40,7 +41,7 @@ export const chooseReplacement: FlowDefinition<Battle> = {
 };
 export const combo: FlowDefinition<Battle> = {
   id: "combo",
-  version: "1",
+  version: "2",
   steps: {
     start: {
       parseData: (v) => dataSchema.parse(v),
@@ -61,12 +62,11 @@ export const combo: FlowDefinition<Battle> = {
       advance: (_state, frame) => {
         const data = dataSchema.parse(frame.data);
         return {
-          kind: "next",
-          step: "after-first",
+          kind: "call",
+          child: hitFlow.start({ source: data.source, target: data.target }),
+          resumeStep: "after-first",
           data,
-          operations: [
-            damage.request({ source: data.source, target: data.target }),
-          ],
+          operations: [],
         };
       },
     },
@@ -113,12 +113,22 @@ export const combo: FlowDefinition<Battle> = {
             ? data.target
             : pet.parseRef(frame.childResult);
         return {
+          kind: "call",
+          child: hitFlow.start({ source: data.source, target }),
+          resumeStep: "finish",
+          data: { ...data, target },
+          operations: [],
+        };
+      },
+    },
+    finish: {
+      parseData: (v) => dataSchema.parse(v),
+      advance(_state, frame) {
+        const data = dataSchema.parse(frame.data);
+        return {
           kind: "done",
-          result: { target },
-          operations: [
-            damage.request({ source: data.source, target }),
-            end.request(data.scope),
-          ],
+          result: { target: data.target },
+          operations: [end.request(data.scope)],
         };
       },
     },
@@ -126,7 +136,7 @@ export const combo: FlowDefinition<Battle> = {
 };
 export function flowRuntime() {
   return new FlowRuntime(
-    [combo, chooseReplacement, strikeFlow],
+    [combo, chooseReplacement, strikeFlow, hitFlow],
     operationRuntime(),
   );
 }

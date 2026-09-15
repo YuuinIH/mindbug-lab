@@ -1,3 +1,4 @@
+import { hitFlow } from "./hit-flow.js";
 import { strikeFlow, pendingStrikeFrame } from "./strike-flow.js";
 import { strikeSettlement } from "./strike-definition.js";
 import { z } from "@yuuinih/turn-kernel";
@@ -90,6 +91,7 @@ export function petGame(
         "settlement:strike-damage",
         "operation:consume-strike-random",
         "operation:apply-strike",
+        "operation:attach",
       ]),
     );
   for (const component of componentDefinitions)
@@ -128,8 +130,14 @@ export function petGame(
       registration("operation", operation.id, operation.version, operation),
     );
   builder.add(
-    registration("flow", combo.id, combo.version, combo, [
+    registration("flow", hitFlow.id, hitFlow.version, hitFlow, [
       "operation:damage",
+      "operation:attach",
+    ]),
+  );
+  builder.add(
+    registration("flow", combo.id, combo.version, combo, [
+      "flow:hit",
       "operation:begin-combo",
       "operation:end-combo",
       "flow:choose-replacement",
@@ -144,7 +152,7 @@ export function petGame(
       ["object:pet"],
     ),
   );
-  const ruleset = builder.build("pet-duel", "6");
+  const ruleset = builder.build("pet-duel", "7");
   const flows = flowRuntime();
   const operations = operationRuntime();
   function parseState(input: unknown): PetSession {
@@ -199,7 +207,11 @@ export function petGame(
           facts: result.facts,
         };
       }
-      if (state.flow && state.flow.status !== "finished")
+      if (
+        state.flow &&
+        state.flow.status !== "finished" &&
+        state.flow.status !== "cancelled"
+      )
         return {
           ok: false,
           reason: "Flow must complete before another command",
@@ -209,7 +221,8 @@ export function petGame(
         const flow = flows.start(
           {
             type: command.kind,
-            version: "1",
+            version:
+              command.kind === "combo" ? combo.version : strikeFlow.version,
             step: command.kind === "combo" ? "start" : "sample",
             data:
               command.kind === "combo"

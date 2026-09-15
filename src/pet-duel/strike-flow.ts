@@ -1,9 +1,5 @@
-import {
-  z,
-  nextRandom,
-  type FlowDefinition,
-  type Frame,
-} from "@yuuinih/turn-kernel";
+import { z, nextRandom, defineFlow, type Frame } from "@yuuinih/turn-kernel";
+import { damageHooks } from "./damage-hooks.js";
 import { attackParticipants } from "./damage.js";
 import { effectiveAttack } from "./values.js";
 import { type Battle } from "./model.js";
@@ -19,9 +15,21 @@ export function pendingStrikeFrame(frame: Frame, sessionId: string) {
     throw Error("Strike settlement belongs to another frame");
   return s;
 }
-export const strikeFlow: FlowDefinition<Battle> = {
+export const strikeFlow = defineFlow<
+  Battle,
+  z.infer<typeof strikeInput>,
+  ReturnType<typeof strikeSettlement.parse>
+>({
   id: "strike",
-  version: "1",
+  version: "2",
+  entry: "sample",
+  input: strikeInput,
+  result: z.unknown().transform((v) => {
+    const result = strikeSettlement.parse(v);
+    if (result.status !== "completed") throw Error("Strike did not complete");
+    return result;
+  }),
+  hooks: damageHooks,
   steps: {
     sample: {
       parseData: (input) => strikeInput.parse(input),
@@ -92,4 +100,4 @@ export const strikeFlow: FlowDefinition<Battle> = {
       },
     },
   },
-};
+});

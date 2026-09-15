@@ -263,35 +263,7 @@ export const operationDefinitions = [
   end.operation,
 ];
 export function operationRuntime() {
-  return new OperationRuntime(
-    parseBattle,
-    operationDefinitions,
-    [],
-    [
-      {
-        id: "after-damage-strengthen",
-        order: 0,
-        react: (state, fact) => {
-          if (fact.kind !== "damaged") return [];
-          const id = `reaction:${state.rng}`;
-          if (
-            state.world.entities.some((e) => e.ref.id === id) ||
-            state.world.retiredIds.includes(id)
-          )
-            return [];
-          return [
-            attach.request({
-              id: mark.ref(state.world.sessionId, id),
-              target: fact.source,
-              source: fact.source,
-              bonus: 2,
-              discount: 0,
-            }),
-          ];
-        },
-      },
-    ],
-  );
+  return new OperationRuntime(parseBattle, operationDefinitions);
 }
 
 const factSchema = z.discriminatedUnion("kind", [
