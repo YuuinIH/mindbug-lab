@@ -14,48 +14,43 @@ export const damageHooks: FlowHooks<
   z.infer<typeof strikeInput>,
   DamageResult
 > = {
-  before: {
-    handlers: [
-      {
-        id: "check-attack-participants",
-        version: "1",
-        order: 0,
-        run(state, input) {
-          attackParticipants(state, input.source, input.target);
-          return { kind: "continue" };
-        },
+  before: [
+    {
+      id: "check-attack-participants",
+      version: "1",
+      order: 0,
+      run(state, input) {
+        attackParticipants(state, input.source, input.target);
+        return { kind: "continue" };
       },
-    ],
-  },
-  after: {
-    handlers: [
-      {
-        id: "after-damage-strengthen",
-        version: "2",
-        order: 0,
-        operations: [attach.operation],
-        flows: [],
-        run(state, event) {
-          const id = `reaction:${event.frameId}`;
-          if (
-            state.world.entities.some((e) => e.ref.id === id) ||
-            state.world.retiredIds.includes(id)
-          )
-            return [];
-          return [
-            {
-              kind: "operation",
-              request: attach.request({
-                id: mark.ref(state.world.sessionId, id),
-                target: event.input.source,
-                source: event.input.source,
-                bonus: 2,
-                discount: 0,
-              }),
-            },
-          ];
-        },
+    },
+  ],
+  after: [
+    {
+      id: "after-damage-strengthen",
+      version: "2",
+      order: 0,
+
+      run(state, event) {
+        const id = `reaction:${event.frameId}`;
+        if (
+          state.world.entities.some((e) => e.ref.id === id) ||
+          state.world.retiredIds.includes(id)
+        )
+          return [];
+        return [
+          {
+            kind: "operation",
+            request: attach.request({
+              id: mark.ref(state.world.sessionId, id),
+              target: event.input.source,
+              source: event.input.source,
+              bonus: 2,
+              discount: 0,
+            }),
+          },
+        ];
       },
-    ],
-  },
+    },
+  ],
 };

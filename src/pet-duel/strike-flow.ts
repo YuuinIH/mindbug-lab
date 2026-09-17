@@ -21,7 +21,7 @@ export const strikeFlow = defineFlow<
   ReturnType<typeof strikeSettlement.parse>
 >({
   id: "strike",
-  version: "2",
+  version: "3",
   entry: "sample",
   input: strikeInput,
   result: z.unknown().transform((v) => {
