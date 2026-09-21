@@ -11,7 +11,6 @@ export const hitFlow = defineFlow<
   z.infer<typeof strikeInput>
 >({
   id: "hit",
-  version: "2",
   entry: "apply",
   input: strikeInput,
   result: strikeInput,

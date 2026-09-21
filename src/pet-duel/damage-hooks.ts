@@ -17,7 +17,6 @@ export const damageHooks: FlowHooks<
   before: [
     {
       id: "check-attack-participants",
-      version: "1",
       order: 0,
       run(state, input) {
         attackParticipants(state, input.source, input.target);
@@ -28,7 +27,6 @@ export const damageHooks: FlowHooks<
   after: [
     {
       id: "after-damage-strengthen",
-      version: "2",
       order: 0,
 
       run(state, event) {

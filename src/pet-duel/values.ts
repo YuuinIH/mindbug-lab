@@ -3,13 +3,11 @@ import type { Battle } from "./model.js";
 import { petCombat } from "./definitions.js";
 export const attack = petCombat.numericValue<Battle>(
   "attack",
-  "1",
   (_q, _ref, combat) => combat.attack,
   (n) => Math.max(0, Math.floor(n)),
 );
 export const cost = petCombat.numericValue<Battle>(
   "cost",
-  "1",
   (_q, _ref, combat) => combat.cost,
   (n) => Math.max(0, Math.floor(n)),
 );

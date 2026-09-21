@@ -8,7 +8,6 @@ import {
 } from "@yuuinih/turn-kernel";
 export const health = defineComponent(
   "health",
-  "1",
   z
     .strictObject({
       hp: z.number().int().min(0),
@@ -19,7 +18,6 @@ export const health = defineComponent(
 );
 export const combat = defineComponent(
   "combat",
-  "1",
   z.strictObject({
     attack: z.number().int().min(0),
     cost: z.number().int().min(0),
@@ -28,7 +26,6 @@ export const combat = defineComponent(
 );
 export const pet = defineObject(
   "pet",
-  "2",
   z.strictObject({
     health: health.schema(),
     combat: combat.schema(),
@@ -38,7 +35,6 @@ export const pet = defineObject(
 );
 export const tower = defineObject(
   "tower",
-  "1",
   z.strictObject({
     health: health.schema(),
     team: z.enum(["A", "B"]),
@@ -47,7 +43,6 @@ export const tower = defineObject(
 );
 export const mark = defineObject(
   "mark",
-  "1",
   z.strictObject({
     stacks: z.number().int().positive(),
     bonus: z.number().int(),
@@ -59,7 +54,6 @@ export const petHealth = componentTarget(health, pet);
 export const petCombat = componentTarget(combat, pet);
 export const attached = defineRelation({
   id: "attached",
-  version: "2",
   from: "mark",
   to: { component: health.id },
   cardinality: "one",
@@ -69,7 +63,6 @@ export const attached = defineRelation({
 });
 export const source = defineRelation({
   id: "source",
-  version: "1",
   from: "mark",
   to: "pet",
   cardinality: "one",

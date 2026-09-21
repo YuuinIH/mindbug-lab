@@ -1,3 +1,4 @@
+import { rulesetBuildId } from "../../ruleset-build.js";
 import { hitFlow } from "./hit-flow.js";
 import { strikeFlow, pendingStrikeFrame } from "./strike-flow.js";
 import { strikeSettlement } from "./strike-definition.js";
@@ -78,16 +79,9 @@ export function petGame(
   sessionId: string,
 ): GameDefinition<PetSession, PetCommand, Fact> {
   const builder = new RulesetBuilder()
+    .add(registration("settlement", strikeSettlement.id, strikeSettlement))
     .add(
-      registration(
-        "settlement",
-        strikeSettlement.id,
-        strikeSettlement.version,
-        strikeSettlement,
-      ),
-    )
-    .add(
-      registration("flow", strikeFlow.id, strikeFlow.version, strikeFlow, [
+      registration("flow", strikeFlow.id, strikeFlow, [
         "settlement:strike-damage",
         "operation:consume-strike-random",
         "operation:apply-strike",
@@ -95,22 +89,19 @@ export function petGame(
       ]),
     );
   for (const component of componentDefinitions)
-    builder.add(
-      registration("component", component.id, component.version, component),
-    );
+    builder.add(registration("component", component.id, component));
   for (const object of objectDefinitions)
     builder.add(
       registration(
         "object",
         object.kind,
-        object.version,
         object,
         object.components.map((c) => `component:${c.id}`),
       ),
     );
   for (const relation of relations)
     builder.add(
-      registration("relation", relation.id, relation.version, relation, [
+      registration("relation", relation.id, relation, [
         typeof relation.from === "string"
           ? `object:${relation.from}`
           : `component:${relation.from.component}`,
@@ -121,22 +112,20 @@ export function petGame(
     );
   for (const value of valueDefinitions)
     builder.add(
-      registration("value", value.id, value.version, value, [
+      registration("value", value.id, value, [
         `component:${value.component.id}`,
       ]),
     );
   for (const operation of operationDefinitions)
-    builder.add(
-      registration("operation", operation.id, operation.version, operation),
-    );
+    builder.add(registration("operation", operation.id, operation));
   builder.add(
-    registration("flow", hitFlow.id, hitFlow.version, hitFlow, [
+    registration("flow", hitFlow.id, hitFlow, [
       "operation:damage",
       "operation:attach",
     ]),
   );
   builder.add(
-    registration("flow", combo.id, combo.version, combo, [
+    registration("flow", combo.id, combo, [
       "flow:hit",
       "operation:begin-combo",
       "operation:end-combo",
@@ -144,15 +133,11 @@ export function petGame(
     ]),
   );
   builder.add(
-    registration(
-      "flow",
-      chooseReplacement.id,
-      chooseReplacement.version,
-      chooseReplacement,
-      ["object:pet"],
-    ),
+    registration("flow", chooseReplacement.id, chooseReplacement, [
+      "object:pet",
+    ]),
   );
-  const ruleset = builder.build("pet-duel", "7");
+  const ruleset = builder.build("pet-duel", rulesetBuildId);
   const flows = flowRuntime();
   const operations = operationRuntime();
   function parseState(input: unknown): PetSession {
@@ -221,8 +206,6 @@ export function petGame(
         const flow = flows.start(
           {
             type: command.kind,
-            version:
-              command.kind === "combo" ? combo.version : strikeFlow.version,
             step: command.kind === "combo" ? "start" : "sample",
             data:
               command.kind === "combo"

@@ -6,7 +6,6 @@ export const strikeInput = z.strictObject({
 });
 export const strikeSettlement = defineSettlement({
   id: "strike-damage",
-  version: "1",
   input: strikeInput.extend({
     attack: z.number().int().nonnegative(),
     rolled: z.number().int().min(0).max(2),

@@ -76,7 +76,6 @@ const healInput = z.strictObject({
 });
 export const heal = defineOperation<Battle, z.infer<typeof healInput>, Fact>({
   id: "heal",
-  version: "1",
   parse: (v) => healInput.parse(v),
   execute(state, input) {
     const target = read(state).component(healable, input.target);
@@ -118,7 +117,6 @@ export const attach = defineOperation<
   Fact
 >({
   id: "attach",
-  version: "1",
   parse: (v) => attachInput.parse(v),
   execute(state, input) {
     read(state).get(pet, input.target);
@@ -165,7 +163,6 @@ export const attach = defineOperation<
 });
 export const remove = defineOperation<Battle, Ref<"mark">, Fact>({
   id: "remove-mark",
-  version: "1",
   parse: mark.parseRef,
   execute(state, input) {
     edit(state, ["mark"]).remove(input);
@@ -180,7 +177,6 @@ const beginInput = z.strictObject({
 });
 export const begin = defineOperation<Battle, z.infer<typeof beginInput>, Fact>({
   id: "begin-combo",
-  version: "1",
   parse: (v) => beginInput.parse(v),
   execute(state, input) {
     const attacker = read(state).get(pet, input.source);
@@ -225,7 +221,6 @@ export const damage = defineOperation<
   Fact
 >({
   id: "damage",
-  version: "1",
   parse: (v) => damageInput.parse(v),
   execute(state, input) {
     attackParticipants(state, input.source, input.target);
@@ -243,7 +238,6 @@ export const damage = defineOperation<
 });
 export const end = defineOperation<Battle, string, Fact>({
   id: "end-combo",
-  version: "1",
   parse: (v) => z.string().min(1).parse(v),
   execute(state, id) {
     if (!state.activeFlows.includes(id)) throw Error("Missing flow scope");

@@ -18,7 +18,6 @@ export const consumeStrikeRandom = defineOperation<
   Fact
 >({
   id: "consume-strike-random",
-  version: "1",
   parse: (input) => randomInput.parse(input),
   execute(state, input) {
     if (state.rng !== input.expected) throw Error("Stale random sample");
@@ -39,7 +38,6 @@ export const applyStrike = defineOperation<
   Fact
 >({
   id: "apply-strike",
-  version: "1",
   parse: strikeSettlement.parse,
   execute(state, settlement) {
     if (

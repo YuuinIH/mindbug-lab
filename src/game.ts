@@ -1,3 +1,4 @@
+import { rulesetBuildId } from "../ruleset-build.js";
 import {
   defineOperation,
   OperationRuntime,
@@ -28,7 +29,6 @@ export function gameFor(
   ).map((kind) => {
     const operation = defineOperation<State, Command, Fact>({
       id: kind,
-      version: "1",
       parse: (value) => {
         const c = commandSchema.parse(value);
         if (c.kind !== kind) throw Error("Wrong operation command");
@@ -41,13 +41,13 @@ export function gameFor(
       },
       authorize: (before, after) => authorizeTransition(kind, before, after),
     });
-    const token = registration("operation", kind, "1", operation.operation, [
+    const token = registration("operation", kind, operation.operation, [
       "content:cards",
     ]);
     builder.add(token);
     return token;
   });
-  const assembled = builder.build("mindbug-lab", "3");
+  const assembled = builder.build("mindbug-lab", rulesetBuildId);
   const operations: Operation<State, Fact>[] = registrations.map((t) =>
     assembled.resolve(t),
   );
@@ -60,7 +60,6 @@ export function gameFor(
       // A command is one operation; only game-specific waiting state is persisted.
       const request: OperationRequest = {
         operation: command.kind,
-        version: "1",
         input: command,
       };
       try {

@@ -16,7 +16,6 @@ const dataSchema = z.strictObject({
 const switchSchema = z.strictObject({ team: z.enum(["A", "B"]) });
 export const chooseReplacement: FlowDefinition<Battle> = {
   id: "choose-replacement",
-  version: "1",
   steps: {
     choose: {
       parseData: (v) => switchSchema.parse(v),
@@ -41,7 +40,6 @@ export const chooseReplacement: FlowDefinition<Battle> = {
 };
 export const combo: FlowDefinition<Battle> = {
   id: "combo",
-  version: "2",
   steps: {
     start: {
       parseData: (v) => dataSchema.parse(v),
@@ -94,7 +92,6 @@ export const combo: FlowDefinition<Battle> = {
           kind: "call",
           child: {
             type: "choose-replacement",
-            version: "1",
             step: "choose",
             data: { team: target.team },
           },

@@ -63,11 +63,11 @@ Mindbug 按模型、校验、行动、结算、注册和宿主拆分文件。每
 
 ## 自定义内容入口
 
-校验能力由内核提供：统一从 `@yuuinih/turn-kernel` 导入 `z`，游戏包不再单独依赖 Zod。对象直接以 `defineObject(kind, version, schema)` 定义，字段类型由 schema 推导。
+校验能力由内核提供：统一从 `@yuuinih/turn-kernel` 导入 `z`，游戏包不再单独依赖 Zod。对象直接以 `defineObject(kind, schema)` 定义，字段类型由 schema 推导。
 
 Mindbug 的 JSON 卡牌资料在 `registration.ts` 校验并注册。精灵的对象、关系、派生值、操作和流程在 `pet-duel/game.ts` 组装版本化规则集。
 
-内容作者可以通过内核 `defineBehavior` 声明允许请求的操作，再用 `bindBehavior` 将 JSON/YAML 参数绑定到注册行为，构建时检查依赖并冻结。完整示例和安全边界见 [内核注册说明](https://github.com/YuuinIH/turn-kernel#自定义内容如何注册)。参数保留数据形式供分析；TS 行为实现变更必须提升版本，不在进行中的对局热替换。
+内容作者可以通过内核 `defineBehavior` 声明允许请求的操作，再用 `bindBehavior` 将 JSON/YAML 参数绑定到注册行为，构建时检查依赖并冻结。完整示例和安全边界见 [内核注册说明](https://github.com/YuuinIH/turn-kernel#自定义内容如何注册)。参数保留数据形式供分析；TS 行为实现包含在生成的规则集构建摘要中，不在进行中的对局热替换。
 
 这是最小可执行实验，还不是完整精灵游戏。尚未实现通用胜负循环、全量可配置效果目录、旧 config-value 迁移、玩家隐藏视图和网络服务。数值依赖目前显式追踪并保守重算，未实现增量缓存。旧 `test_battle` 未被替换。
 
@@ -85,7 +85,7 @@ Mindbug 的普通命令不再包装为单步 Flow，游戏自己的等待状态�
 
 组件组合目前固定；未引入动态组件或 ECS 调度。旧精灵快照不兼容。详见 [内核设计说明](https://github.com/YuuinIH/turn-kernel/blob/main/docs/components-values.md)。
 
-派生值现在必须在组件目标下声明，例如 `petCombat.numericValue<Battle>("attack", "1", (_q, _ref, combat) => combat.attack)`。计算前自动验证战斗组件，数值注册自动依赖其所属组件；modifier 使用组件内的派生值标识。v0.5 不兼容旧的裸 valueId。
+派生值现在必须在组件目标下声明，例如 `petCombat.numericValue<Battle>("attack", (_q, _ref, combat) => combat.attack)`。计算前自动验证战斗组件，数值注册自动依赖其所属组件；modifier 使用组件内的派生值标识。v0.5 不兼容旧的裸 valueId。
 
 ## v0.6 结算中途等待
 
@@ -99,4 +99,10 @@ Mindbug 的普通命令不再包装为单步 Flow，游戏自己的等待状态�
 
 连击调用共享的单次命中流程：主体执行伤害后，由引擎完成 after 中的加印记操作，才继续下一击。此前的 `OperationRuntime` 全局受伤反应已从此实验移除；印记去重使用本次流程实例 ID，不再借用随机状态作为身份。格挡仍然是伤害流程内的显式玩家选择，恢复不会重新执行 before 或重复抽取随机数。
 
-内核的生命周期测试额外覆盖了 after 反应子流程等待、恢复和工作进程接管。此游戏示例的 after 当前只返回同步受控操作。流程快照使用格式 2；旧格式不兼容，规则集版本已更新。
+内核的生命周期测试额外覆盖了 after 反应子流程等待、恢复和工作进程接管。此游戏示例的 after 当前只返回同步受控操作。流程快照使用格式 3；旧格式不兼容，规则集版本已更新。
+
+## v0.9：自动规则集身份
+
+定义和显式注册不再手写版本。`npm run build` 清理并编译项目，再对游戏与内核的编译产物、内容和两份依赖锁文件生成构建摘要。两个游戏入口都使用生成的 `dist/ruleset-build.js`；跳过构建直接运行源码会拒绝未生成的身份。
+
+相同产物的重复构建得到相同身份；代码、schema 或内容变化会拒绝旧快照。运行时传入的卡牌内容也计入规则集。恢复旧对局需使用原产物，没有自动迁移。流程格式为 3。详细边界见内核的 [构建契约](https://github.com/YuuinIH/turn-kernel/blob/main/docs/ruleset-build.md)。

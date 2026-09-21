@@ -8,19 +8,13 @@ import {
   type Relation,
 } from "@yuuinih/turn-kernel";
 import { definitionsSchema, stateSchema, type State } from "./model.js";
-export const cardType = defineObject(
-  "card",
-  "1",
-  stateSchema.shape.cards.element,
-);
+export const cardType = defineObject("card", stateSchema.shape.cards.element);
 export const playerType = defineObject(
   "player",
-  "1",
   stateSchema.shape.players.shape.A,
 );
 export const controlledBy = defineRelation({
   id: "controlled-by",
-  version: "1",
   from: "card",
   to: "player",
   cardinality: "one",
@@ -47,10 +41,10 @@ export function registerContent(input: unknown) {
     definitionsSchema.parse(value),
   );
   const builder = new RulesetBuilder()
-    .add(registration("object", "card", "1", cardType))
-    .add(registration("object", "player", "1", playerType))
+    .add(registration("object", "card", cardType))
+    .add(registration("object", "player", playerType))
     .add(
-      registration("relation", controlledBy.id, "1", controlledBy, [
+      registration("relation", controlledBy.id, controlledBy, [
         "object:card",
         "object:player",
       ]),
